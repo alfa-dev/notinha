@@ -15,6 +15,7 @@ type Draft = {
 export default function ReceiptCapture() {
   const router = useRouter();
   const fileRef = useRef<HTMLInputElement>(null);
+  const galleryRef = useRef<HTMLInputElement>(null);
   const [open, setOpen] = useState(false);
   const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
@@ -117,18 +118,38 @@ export default function ReceiptCapture() {
                   </button>
                 </div>
 
-                <button
-                  onClick={() => fileRef.current?.click()}
-                  disabled={busy}
-                  className="mt-4 w-full rounded-xl border-2 border-dashed border-paper/30 py-10 text-center font-bold disabled:opacity-50"
-                >
-                  📷 Foto da notinha
-                </button>
+                <div className="mt-4 flex gap-2">
+                  <button
+                    onClick={() => fileRef.current?.click()}
+                    disabled={busy}
+                    className="flex-1 rounded-xl border-2 border-dashed border-paper/30 py-8 text-center font-bold disabled:opacity-50"
+                  >
+                    📷 Câmera
+                  </button>
+                  <button
+                    onClick={() => galleryRef.current?.click()}
+                    disabled={busy}
+                    className="flex-1 rounded-xl border-2 border-dashed border-paper/30 py-8 text-center font-bold disabled:opacity-50"
+                  >
+                    🖼️ Galeria
+                  </button>
+                </div>
                 <input
                   ref={fileRef}
                   type="file"
                   accept="image/*"
                   capture="environment"
+                  hidden
+                  onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    if (f) parse(f);
+                    e.target.value = "";
+                  }}
+                />
+                <input
+                  ref={galleryRef}
+                  type="file"
+                  accept="image/*"
                   hidden
                   onChange={(e) => {
                     const f = e.target.files?.[0];
