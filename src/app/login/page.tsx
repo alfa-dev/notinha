@@ -10,21 +10,31 @@ export default function LoginPage() {
 
   async function sendLink() {
     setError(null);
-    const supabase = createClient();
-    const { error } = await supabase.auth.signInWithOtp({
-      email,
-      options: { emailRedirectTo: `${location.origin}/auth/callback` },
-    });
-    if (error) setError(error.message);
-    else setSent(true);
+    try {
+      const supabase = createClient();
+      const { error } = await supabase.auth.signInWithOtp({
+        email,
+        options: { emailRedirectTo: `${location.origin}/auth/callback` },
+      });
+      if (error) setError(error.message);
+      else setSent(true);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Erro desconhecido");
+    }
   }
 
   async function googleLogin() {
-    const supabase = createClient();
-    await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: { redirectTo: `${location.origin}/auth/callback` },
-    });
+    setError(null);
+    try {
+      const supabase = createClient();
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: { redirectTo: `${location.origin}/auth/callback` },
+      });
+      if (error) setError(error.message);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Erro desconhecido");
+    }
   }
 
   return (
