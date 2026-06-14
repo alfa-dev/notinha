@@ -3,6 +3,8 @@ import { Inter, Spline_Sans_Mono } from "next/font/google";
 import "./globals.css";
 import { OCRQueueProvider } from "@/components/OCRQueue";
 import NavigationProgress from "@/components/NavigationProgress";
+import BottomNav from "@/components/BottomNav";
+import ReceiptCapture from "@/components/ReceiptCapture";
 import { createClient } from "@/lib/supabase/server";
 import type { UserCategory, Space } from "@/lib/types";
 
@@ -36,6 +38,7 @@ export default async function RootLayout({
 }) {
   let userCategories: UserCategory[] = [];
   let spaces: Space[] = [];
+  let isLoggedIn = false;
 
   try {
     const supabase = await createClient();
@@ -44,11 +47,10 @@ export default async function RootLayout({
     } = await supabase.auth.getUser();
 
     if (user) {
+      isLoggedIn = true;
       const [catRes, spaceRes] = await Promise.all([
         supabase.from("user_categories").select("*").order("position"),
-        supabase
-          .from("spaces")
-          .select("*, space_members(*)"),
+        supabase.from("spaces").select("*, space_members(*)"),
       ]);
       userCategories = (catRes.data ?? []) as UserCategory[];
       spaces = (spaceRes.data ?? []) as Space[];
@@ -63,7 +65,9 @@ export default async function RootLayout({
         <NavigationProgress />
         <OCRQueueProvider userCategories={userCategories} spaces={spaces}>
           {children}
+          {isLoggedIn && <ReceiptCapture />}
         </OCRQueueProvider>
+        <BottomNav />
       </body>
     </html>
   );

@@ -18,7 +18,7 @@ export default async function ConfiguracoesPage() {
   return (
     <>
       <AppHeader title="Configurações" />
-      <main className="mx-auto max-w-lg p-4 pb-12">
+      <main className="mx-auto max-w-lg p-4 pb-44">
         <section className="rounded-2xl border border-[rgba(255,255,255,0.08)] bg-ink-soft mt-4 px-5 py-6">
           <p className="text-center text-[11px] tracking-[0.3em] uppercase text-print-faint mb-4">
             Categorias padrão

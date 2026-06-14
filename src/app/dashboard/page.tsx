@@ -3,11 +3,31 @@ import { Suspense } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { formatBRL, categoryLabel } from "@/lib/categories";
 import type { Expense, UserCategory, Space } from "@/lib/types";
-import ReceiptCapture from "@/components/ReceiptCapture";
 import ExpenseList from "@/components/ExpenseList";
 import PeriodSelector from "@/components/PeriodSelector";
 import { getCurrentProfile, TIER_LABELS } from "@/lib/admin";
 import UserMenu from "@/components/UserMenu";
+
+// One color per semantic category; unknown categories cycle through PALETTE
+const CATEGORY_COLORS: Record<string, string> = {
+  alimentacao:    "#FF6433",
+  transporte:     "#3B82F6",
+  moradia:        "#10B981",
+  saude:          "#8B5CF6",
+  lazer:          "#F59E0B",
+  trabalho:       "#06B6D4",
+  educacao:       "#EC4899",
+  outros:         "#64748B",
+  servicos:       "#F97316",
+  assinaturas:    "#A78BFA",
+  entretenimento: "#F59E0B",
+  viagem:         "#34D399",
+};
+const PALETTE = ["#FF6433", "#3B82F6", "#10B981", "#8B5CF6", "#F59E0B", "#06B6D4", "#EC4899", "#64748B"];
+
+function catColor(id: string, idx: number) {
+  return CATEGORY_COLORS[id] ?? PALETTE[idx % PALETTE.length];
+}
 
 type Props = {
   searchParams: Promise<{ periodo?: string }>;
@@ -42,14 +62,18 @@ export default async function DashboardPage({ searchParams }: Props) {
     query = query.limit(500);
   }
 
-  const [{ data }, catRes, spaceRes, profile] = await Promise.all([
+  const [expensesResult, catRes, spaceRes, profile] = await Promise.all([
     query,
     supabase.from("user_categories").select("*").order("position"),
     supabase.from("spaces").select("*, space_members(*)"),
     getCurrentProfile(),
   ]);
 
-  const expenses = (data ?? []) as Expense[];
+  if (expensesResult.error) {
+    console.error("[dashboard] expenses query error:", expensesResult.error);
+  }
+
+  const expenses = (expensesResult.data ?? []) as Expense[];
   const userCategories = (catRes.data ?? []) as UserCategory[];
   const spaces = (spaceRes.data ?? []) as Space[];
 
@@ -81,65 +105,37 @@ export default async function DashboardPage({ searchParams }: Props) {
 
   const tier = profile?.tier ?? "free";
   const isAdmin = profile?.role === "admin";
+  const categoryCount = Object.keys(byCategory).length;
 
   return (
     <>
-      {/* ── Top nav ── */}
+      {/* ── Top bar: logo + user only ── */}
       <header className="sticky top-0 z-40 border-b border-[rgba(255,255,255,0.08)] bg-ink/90 backdrop-blur-md">
         <div className="mx-auto flex max-w-lg items-center justify-between px-4 h-14">
-          {/* Logo */}
           <div className="flex items-center gap-2">
             <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-stamp text-xs font-extrabold text-white">
               N
             </div>
             <span className="font-bold text-base tracking-tight">notinha</span>
           </div>
-
-          {/* Nav links */}
-          <nav className="flex items-center gap-1 text-xs font-semibold">
+          <div className="flex items-center gap-2">
             {isAdmin && (
               <Link
                 href="/admin"
-                className="rounded-md px-2.5 py-1.5 text-stamp hover:bg-ink-raise transition-colors"
+                className="rounded-md px-2.5 py-1.5 text-xs font-semibold text-stamp hover:bg-ink-raise transition-colors"
               >
                 Admin
               </Link>
             )}
-            {spaces.length > 0 && (
-              <Link
-                href="/espacos"
-                className="rounded-md px-2.5 py-1.5 text-print-faint hover:text-paper hover:bg-ink-raise transition-colors"
-              >
-                Espaços
-              </Link>
-            )}
-            <Link
-              href="/mapa"
-              className="rounded-md px-2.5 py-1.5 text-print-faint hover:text-paper hover:bg-ink-raise transition-colors"
-            >
-              Mapa
-            </Link>
-            <Link
-              href="/importar"
-              className="rounded-md px-2.5 py-1.5 text-print-faint hover:text-paper hover:bg-ink-raise transition-colors"
-            >
-              Importar
-            </Link>
-            <Link
-              href="/configuracoes"
-              className="rounded-md px-2.5 py-1.5 text-print-faint hover:text-paper hover:bg-ink-raise transition-colors"
-            >
-              Config
-            </Link>
             <UserMenu email={user?.email ?? ""} />
-          </nav>
+          </div>
         </div>
       </header>
 
-      <main className="mx-auto max-w-lg px-4 pb-28 pt-4">
+      <main className="mx-auto max-w-lg px-4 pt-4 pb-44">
         {/* Upgrade banner */}
         {tier !== "pro" && (
-          <div className="mb-3 flex items-center justify-between rounded-xl bg-ink-soft border border-[rgba(255,255,255,0.06)] px-4 py-2.5">
+          <div className="mb-4 flex items-center justify-between rounded-xl bg-ink-soft border border-[rgba(255,255,255,0.06)] px-4 py-2.5">
             <span className="text-xs text-print-faint">
               Plano{" "}
               <span className="font-semibold text-paper">{TIER_LABELS[tier]}</span>
@@ -158,64 +154,88 @@ export default async function DashboardPage({ searchParams }: Props) {
           <PeriodSelector current={currentPeriod} />
         </Suspense>
 
-        {/* Summary card */}
-        <section className="mt-3 rounded-2xl border border-[rgba(255,255,255,0.08)] bg-ink-soft px-5 py-6">
-          <p className="text-center text-[10px] font-semibold uppercase tracking-[0.2em] text-print-faint capitalize">
-            {periodLabel}
-          </p>
-          <p className="money mt-3 text-center text-4xl font-bold">
-            {formatBRL(total)}
-          </p>
+        {/* ── Stats cards ── */}
+        <div className="mt-3 grid grid-cols-3 gap-2">
+          {/* Total */}
+          <div className="col-span-3 rounded-2xl border border-[rgba(255,255,255,0.08)] bg-ink-soft px-5 py-5">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-print-faint capitalize mb-1">
+              {periodLabel}
+            </p>
+            <p className="money text-4xl font-bold">{formatBRL(total)}</p>
+            {expenses.length > 0 && (
+              <div className="mt-2 flex items-center gap-3 text-xs text-print-faint">
+                <span>{expenses.length} {expenses.length === 1 ? "gasto" : "gastos"}</span>
+                {categoryCount > 0 && (
+                  <>
+                    <span className="text-[rgba(255,255,255,0.15)]">·</span>
+                    <span>{categoryCount} {categoryCount === 1 ? "categoria" : "categorias"}</span>
+                  </>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
 
-          {Object.keys(byCategory).length > 0 && (
-            <>
-              <div className="dashed-rule my-4" />
-              <ul className="space-y-2 text-sm">
-                {Object.entries(byCategory)
-                  .sort((a, b) => b[1] - a[1])
-                  .map(([cat, cents]) => {
-                    const pct = Math.round((cents / total) * 100);
-                    return (
-                      <li key={cat} className="flex items-center gap-3">
-                        <span className="flex-1 truncate text-print-faint text-xs">
+        {/* ── Category breakdown ── */}
+        {Object.keys(byCategory).length > 0 && (
+          <div className="mt-3 rounded-2xl border border-[rgba(255,255,255,0.08)] bg-ink-soft px-5 py-5">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-print-faint mb-4">
+              Por categoria
+            </p>
+            <ul className="space-y-3">
+              {Object.entries(byCategory)
+                .sort((a, b) => b[1] - a[1])
+                .map(([cat, cents], i) => {
+                  const pct = Math.round((cents / total) * 100);
+                  const color = catColor(cat, i);
+                  return (
+                    <li key={cat}>
+                      <div className="flex items-center justify-between mb-1.5">
+                        <span className="text-xs font-medium text-paper">
                           {categoryLabel(cat, userCategories)}
                         </span>
-                        <div className="h-1 w-16 rounded-full bg-ink-raise overflow-hidden">
-                          <div
-                            className="h-full rounded-full bg-stamp"
-                            style={{ width: `${pct}%` }}
-                          />
-                        </div>
-                        <span className="money shrink-0 text-xs tabular-nums">
+                        <span className="money text-xs text-print-faint tabular-nums">
                           {formatBRL(cents)}
                         </span>
-                      </li>
-                    );
-                  })}
-              </ul>
-            </>
-          )}
+                      </div>
+                      <div className="h-1.5 rounded-full bg-ink-raise overflow-hidden">
+                        <div
+                          className="h-full rounded-full"
+                          style={{
+                            width: `${pct}%`,
+                            backgroundColor: color,
+                            boxShadow: `0 0 6px ${color}80`,
+                          }}
+                        />
+                      </div>
+                    </li>
+                  );
+                })}
+            </ul>
+          </div>
+        )}
 
-          {expenses.length === 0 && (
-            <p className="mt-4 text-center text-sm text-print-faint">
+        {expenses.length === 0 && (
+          <div className="mt-3 rounded-2xl border border-[rgba(255,255,255,0.08)] bg-ink-soft px-5 py-10 text-center">
+            <p className="text-sm text-print-faint">
               {isTudo
                 ? "Nenhum gasto registrado ainda."
                 : "Nenhum gasto neste período."}
             </p>
-          )}
+          </div>
+        )}
 
-          {Object.entries(toReimburse).length > 0 && (
-            <>
-              <div className="dashed-rule my-4" />
-              {Object.entries(toReimburse).map(([who, cents]) => (
-                <p key={who} className="flex justify-between text-sm font-semibold text-stamp">
-                  <span>A pagar pra {who}</span>
-                  <span className="money">{formatBRL(cents)}</span>
-                </p>
-              ))}
-            </>
-          )}
-        </section>
+        {/* Reembolso pendente */}
+        {Object.entries(toReimburse).length > 0 && (
+          <div className="mt-3 rounded-2xl border border-[rgba(255,255,255,0.08)] bg-ink-soft px-5 py-4">
+            {Object.entries(toReimburse).map(([who, cents]) => (
+              <p key={who} className="flex justify-between text-sm font-semibold text-stamp">
+                <span>A pagar pra {who}</span>
+                <span className="money">{formatBRL(cents)}</span>
+              </p>
+            ))}
+          </div>
+        )}
 
         {pending > 0 && (
           <div className="mt-3 rounded-xl border border-stamp/20 bg-stamp/8 px-4 py-3 text-sm font-medium text-stamp">
@@ -229,8 +249,6 @@ export default async function DashboardPage({ searchParams }: Props) {
           spaces={spaces}
           currentUserId={user?.id}
         />
-
-        <ReceiptCapture />
       </main>
     </>
   );

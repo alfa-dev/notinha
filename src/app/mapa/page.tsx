@@ -19,7 +19,7 @@ export default async function MapaPage() {
   return (
     <>
       <AppHeader title="Mapa de gastos" />
-      <main className="mx-auto max-w-lg p-4 pb-12">
+      <main className="mx-auto max-w-lg p-4 pb-44">
       <MapClient expenses={expenses} />
 
       {expenses.length > 0 && (

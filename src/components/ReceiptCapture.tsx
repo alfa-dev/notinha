@@ -113,7 +113,7 @@ export default function ReceiptCapture() {
 
   return (
     <>
-      <div className="fixed inset-x-0 bottom-0 z-20 mx-auto max-w-lg p-4">
+      <div className="fixed inset-x-0 bottom-16 z-20 mx-auto max-w-lg px-4 pb-2">
         <button
           onClick={() => setOpen(true)}
           className="w-full rounded-xl bg-stamp py-4 text-lg font-extrabold text-paper shadow-lg shadow-black/40 active:scale-[0.99]"

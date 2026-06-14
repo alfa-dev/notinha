@@ -24,7 +24,7 @@ export default async function EspacosPage() {
   return (
     <>
       <AppHeader title="Espaços compartilhados" />
-      <main className="mx-auto max-w-lg p-4 pb-12">
+      <main className="mx-auto max-w-lg p-4 pb-44">
       <p className="mt-2 text-sm text-print-faint">
         Crie um espaço, convide alguém e vejam os gastos juntos.
       </p>
