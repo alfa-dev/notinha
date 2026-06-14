@@ -29,7 +29,7 @@ export default async function ConvitePage({ params }: Props) {
         <p className="mt-2 text-paper/60">
           Este convite não existe ou expirou.
         </p>
-        <a href="/" className="mt-4 inline-block underline">
+        <a href="/dashboard" className="mt-4 inline-block underline">
           Voltar ao início
         </a>
       </main>
@@ -43,7 +43,7 @@ export default async function ConvitePage({ params }: Props) {
         <p className="mt-2 text-paper/60">
           Este convite já foi aceito por outra pessoa.
         </p>
-        <a href="/" className="mt-4 inline-block underline">
+        <a href="/dashboard" className="mt-4 inline-block underline">
           Voltar ao início
         </a>
       </main>

@@ -20,7 +20,7 @@ export default async function ConfiguracoesPage() {
           Configurações
         </h1>
         <Link
-          href="/"
+          href="/dashboard"
           className="text-sm font-bold underline underline-offset-4"
         >
           ← Gastos

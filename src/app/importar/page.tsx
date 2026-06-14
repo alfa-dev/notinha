@@ -7,7 +7,7 @@ export default function ImportarPage() {
       <header className="flex items-baseline justify-between py-2">
         <h1 className="text-2xl font-extrabold tracking-tight">Importar</h1>
         <Link
-          href="/"
+          href="/dashboard"
           className="text-sm font-bold underline underline-offset-4"
         >
           ← Gastos

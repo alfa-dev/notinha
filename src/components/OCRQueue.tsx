@@ -100,7 +100,20 @@ export function OCRQueueProvider({
           body: form,
         });
         const json = await res.json();
-        if (!res.ok) throw new Error(json.error ?? "Falha ao ler a nota");
+        if (!res.ok) {
+          if (res.status === 429 && json.limitReached) {
+            setJobs((prev) =>
+              prev.map((j) =>
+                j.id === queued.id
+                  ? { ...j, status: "error", error: json.error, limitReached: true, tier: json.tier }
+                  : j
+              )
+            );
+            processingRef.current = false;
+            return;
+          }
+          throw new Error(json.error ?? "Falha ao ler a nota");
+        }
 
         setJobs((prev) =>
           prev.map((j) =>
@@ -124,6 +137,7 @@ export function OCRQueueProvider({
                   ...j,
                   status: "error",
                   error: e instanceof Error ? e.message : "Erro inesperado",
+                  limitReached: false,
                 }
               : j
           )
@@ -169,12 +183,22 @@ export function OCRQueueProvider({
           {errors.map((job) => (
             <div
               key={job.id}
-              className="flex items-start gap-2 rounded-lg bg-stamp/20 border border-stamp/40 px-4 py-2 text-sm text-stamp shadow-lg"
+              className="rounded-lg bg-stamp/20 border border-stamp/40 px-4 py-2 text-sm text-stamp shadow-lg"
             >
-              <span className="flex-1">{job.error ?? "Erro ao ler nota"}</span>
-              <button onClick={() => dismiss(job.id)} className="font-bold ml-1 shrink-0">
-                ×
-              </button>
+              <div className="flex items-start gap-2">
+                <span className="flex-1">{job.error ?? "Erro ao ler nota"}</span>
+                <button onClick={() => dismiss(job.id)} className="font-bold ml-1 shrink-0">
+                  ×
+                </button>
+              </div>
+              {job.limitReached && (
+                <a
+                  href="/planos"
+                  className="mt-2 block text-center rounded-md bg-stamp px-3 py-1.5 text-xs font-bold text-paper"
+                >
+                  Ver planos de upgrade →
+                </a>
+              )}
             </div>
           ))}
         </div>

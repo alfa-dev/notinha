@@ -223,7 +223,7 @@ export default function ImportClient() {
           Importar mais
         </button>
         <br />
-        <a href="/" className="mt-2 inline-block text-sm underline">
+        <a href="/dashboard" className="mt-2 inline-block text-sm underline">
           Ver gastos →
         </a>
       </div>

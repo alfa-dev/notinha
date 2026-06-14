@@ -10,7 +10,7 @@ export async function GET(request: Request) {
     await supabase.auth.exchangeCodeForSession(code);
   }
 
-  const next = searchParams.get("next") ?? "/";
-  const safeNext = next.startsWith("/") ? next : "/";
+  const next = searchParams.get("next") ?? "/dashboard";
+  const safeNext = next.startsWith("/") ? next : "/dashboard";
   return NextResponse.redirect(`${origin}${safeNext}`);
 }

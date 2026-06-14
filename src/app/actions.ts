@@ -54,7 +54,7 @@ export async function saveExpense(input: SaveExpenseInput) {
     if (itemsError) throw new Error(itemsError.message);
   }
 
-  revalidatePath("/");
+  revalidatePath("/dashboard");
   return data.id;
 }
 
@@ -88,14 +88,14 @@ export async function updateExpense(
     }
   }
 
-  revalidatePath("/");
+  revalidatePath("/dashboard");
 }
 
 export async function deleteExpense(id: string) {
   const supabase = await createClient();
   const { error } = await supabase.from("expenses").delete().eq("id", id);
   if (error) throw new Error(error.message);
-  revalidatePath("/");
+  revalidatePath("/dashboard");
 }
 
 export async function resolveQuestions(
@@ -122,7 +122,7 @@ export async function resolveQuestions(
     .eq("id", id);
 
   if (error) throw new Error(error.message);
-  revalidatePath("/");
+  revalidatePath("/dashboard");
 }
 
 // ============ Categorias do usuário ============
@@ -150,7 +150,7 @@ export async function addUserCategory(label: string) {
     position: nextPos,
   });
   if (error) throw new Error(error.message);
-  revalidatePath("/");
+  revalidatePath("/dashboard");
   revalidatePath("/configuracoes");
 }
 
@@ -158,7 +158,7 @@ export async function deleteUserCategory(id: string) {
   const supabase = await createClient();
   const { error } = await supabase.from("user_categories").delete().eq("id", id);
   if (error) throw new Error(error.message);
-  revalidatePath("/");
+  revalidatePath("/dashboard");
   revalidatePath("/configuracoes");
 }
 
@@ -186,7 +186,7 @@ export async function createSpace(name: string) {
   });
 
   revalidatePath("/espacos");
-  revalidatePath("/");
+  revalidatePath("/dashboard");
   return data.id;
 }
 
@@ -195,7 +195,7 @@ export async function deleteSpace(id: string) {
   const { error } = await supabase.from("spaces").delete().eq("id", id);
   if (error) throw new Error(error.message);
   revalidatePath("/espacos");
-  revalidatePath("/");
+  revalidatePath("/dashboard");
 }
 
 export async function leaveSpace(spaceId: string) {
@@ -212,7 +212,7 @@ export async function leaveSpace(spaceId: string) {
     .eq("user_id", user.id);
   if (error) throw new Error(error.message);
   revalidatePath("/espacos");
-  revalidatePath("/");
+  revalidatePath("/dashboard");
 }
 
 export async function removeMemberFromSpace(spaceId: string, userId: string) {
@@ -296,7 +296,7 @@ export async function acceptInvite(code: string, displayName: string) {
     .eq("id", invite.id);
 
   revalidatePath("/espacos");
-  revalidatePath("/");
+  revalidatePath("/dashboard");
   return invite.space_id as string;
 }
 

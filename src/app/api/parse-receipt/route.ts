@@ -2,6 +2,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import type { ParsedReceipt } from "@/lib/types";
+import { TIER_LIMITS } from "@/lib/admin";
 
 const MODEL = "claude-sonnet-4-6";
 
@@ -58,6 +59,50 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  // ── Verificação de limite OCR (apenas para imagens, texto é sempre free) ──
+  if (file) {
+    const today = new Date().toISOString().slice(0, 10);
+
+    const { data: profile } = await supabase
+      .from("user_profiles")
+      .select("tier, ocr_count_today, ocr_count_date, suspended")
+      .eq("id", user.id)
+      .single();
+
+    if (profile?.suspended) {
+      return NextResponse.json(
+        { error: "Conta suspensa. Entre em contato com o suporte." },
+        { status: 403 }
+      );
+    }
+
+    const isNewDay = !profile || profile.ocr_count_date !== today;
+    const todayCount = isNewDay ? 0 : (profile?.ocr_count_today ?? 0);
+    const tier = profile?.tier ?? "free";
+    const limit = TIER_LIMITS[tier];
+
+    if (limit !== null && todayCount >= limit) {
+      return NextResponse.json(
+        {
+          error: `Limite de ${limit} ${limit === 1 ? "nota via foto" : "notas via foto"} por dia atingido no plano ${tier.charAt(0).toUpperCase() + tier.slice(1)}.`,
+          limitReached: true,
+          tier,
+          limit,
+          upgradeUrl: "/planos",
+        },
+        { status: 429 }
+      );
+    }
+
+    // Incrementa contador (reset se novo dia)
+    await supabase.from("user_profiles").upsert({
+      id: user.id,
+      ocr_count_today: isNewDay ? 1 : todayCount + 1,
+      ocr_count_date: today,
+    });
+  }
+
+  // ── Monta conteúdo para Claude ──
   const content: Anthropic.ContentBlockParam[] = [];
 
   if (file) {
@@ -106,7 +151,6 @@ export async function POST(req: NextRequest) {
 
     const parsed: ParsedReceipt = JSON.parse(raw);
 
-    // Sobe a foto pro Storage (best-effort, não bloqueia o fluxo)
     let receiptPath: string | null = null;
     if (file) {
       const ext = file.type === "image/png" ? "png" : "jpg";

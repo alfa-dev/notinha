@@ -76,6 +76,40 @@ export type SpaceInvite = {
   created_at: string;
 };
 
+export type UserTier = "free" | "plus" | "pro";
+export type UserRole = "user" | "admin";
+export type SubscriptionStatus =
+  | "active"
+  | "canceled"
+  | "past_due"
+  | "trialing"
+  | null;
+
+export type UserProfile = {
+  id: string;
+  role: UserRole;
+  tier: UserTier;
+  stripe_customer_id: string | null;
+  stripe_subscription_id: string | null;
+  subscription_status: SubscriptionStatus;
+  subscription_period_end: string | null;
+  suspended: boolean;
+  ocr_count_today: number;
+  ocr_count_date: string;
+  created_at: string;
+  updated_at: string;
+};
+
+/** Para o painel admin — inclui dados do auth.users */
+export type AdminUser = {
+  id: string;
+  email: string;
+  created_at: string;
+  last_sign_in_at: string | null;
+  profile: UserProfile | null;
+  expense_count: number;
+};
+
 /** Resposta estruturada da IA ao ler uma notinha / texto livre */
 export type ParsedReceipt = {
   merchant: string | null;
@@ -97,6 +131,8 @@ export type OCRJob = {
   status: "queued" | "processing" | "done" | "error";
   result?: { parsed: ParsedReceipt; receiptPath: string | null };
   error?: string;
+  limitReached?: boolean;
+  tier?: UserTier;
   location?: { latitude: number; longitude: number; address?: string };
   spaceId?: string | null;
 };

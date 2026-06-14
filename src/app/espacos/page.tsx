@@ -28,7 +28,7 @@ export default async function EspacosPage() {
           Espaços compartilhados
         </h1>
         <Link
-          href="/"
+          href="/dashboard"
           className="text-sm font-bold underline underline-offset-4"
         >
           ← Gastos

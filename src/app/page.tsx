@@ -1,175 +1,241 @@
 import Link from "next/link";
-import { Suspense } from "react";
-import { createClient } from "@/lib/supabase/server";
-import { formatBRL, categoryLabel } from "@/lib/categories";
-import type { Expense, UserCategory, Space } from "@/lib/types";
-import ReceiptCapture from "@/components/ReceiptCapture";
-import ExpenseList from "@/components/ExpenseList";
-import PeriodSelector from "@/components/PeriodSelector";
+import dynamic from "next/dynamic";
 
-type Props = {
-  searchParams: Promise<{ periodo?: string }>;
-};
+const ReceiptCanvas = dynamic(() => import("@/components/ReceiptCanvas"), {
+  ssr: false,
+  loading: () => <div className="h-full w-full" />,
+});
 
-export default async function HomePage({ searchParams }: Props) {
-  const { periodo } = await searchParams;
-  const supabase = await createClient();
+const FEATURES = [
+  {
+    icon: "📸",
+    title: "Foto vira nota",
+    desc: "Aponte a câmera para qualquer cupom fiscal. A IA extrai todos os itens automaticamente.",
+  },
+  {
+    icon: "📊",
+    title: "Visualizações inteligentes",
+    desc: "Agrupe por dia, categoria, método de pagamento, pessoa ou localização.",
+  },
+  {
+    icon: "🗺️",
+    title: "Mapa de gastos",
+    desc: "Veja no mapa onde você gastou. GPS automático ao fotografar.",
+  },
+  {
+    icon: "👥",
+    title: "Espaços compartilhados",
+    desc: "Divida despesas com família, parceiro ou equipe em tempo real.",
+  },
+  {
+    icon: "💳",
+    title: "Import de fatura",
+    desc: "Importe CSV do seu banco ou fotografe a fatura do cartão.",
+  },
+  {
+    icon: "🔒",
+    title: "Seus dados, seu controle",
+    desc: "Dados criptografados, hospedado no Brasil. Nunca vendemos informações.",
+  },
+];
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+const PLANS = [
+  { name: "Free", price: "Grátis", features: ["1 OCR/dia", "Gastos manuais ∞", "Todas as visualizações"] },
+  { name: "Plus", price: "R$ 15/mês", features: ["5 OCRs/dia", "Espaços compartilhados", "Import CSV"], highlight: true },
+  { name: "Pro", price: "R$ 39/mês", features: ["OCR ilimitado", "Import por foto de fatura", "Suporte prioritário"] },
+];
 
-  const now = new Date();
-  const nowKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
-  const currentPeriod = periodo ?? nowKey;
-  const isTudo = currentPeriod === "tudo";
-
-  // Busca todos os gastos (filtra client-side ou server-side por período)
-  let query = supabase
-    .from("expenses")
-    .select("*, expense_items(*)")
-    .order("date", { ascending: false })
-    .order("created_at", { ascending: false });
-
-  if (!isTudo) {
-    const [y, m] = currentPeriod.split("-").map(Number);
-    const start = `${y}-${String(m).padStart(2, "0")}-01`;
-    const end = new Date(y, m, 0);
-    const endStr = `${y}-${String(m).padStart(2, "0")}-${String(end.getDate()).padStart(2, "0")}`;
-    query = query.gte("date", start).lte("date", endStr);
-  } else {
-    query = query.limit(500);
-  }
-
-  const { data } = await query;
-  const expenses = (data ?? []) as Expense[];
-
-  // Categorias customizadas e espaços (já buscados no layout, mas precisamos para o resumo)
-  const [catRes, spaceRes] = await Promise.all([
-    supabase.from("user_categories").select("*").order("position"),
-    supabase.from("spaces").select("*, space_members(*)"),
-  ]);
-  const userCategories = (catRes.data ?? []) as UserCategory[];
-  const spaces = (spaceRes.data ?? []) as Space[];
-
-  const total = expenses.reduce((s, e) => s + e.amount_cents, 0);
-
-  const toReimburse = expenses
-    .filter((e) => e.reimburse_to)
-    .reduce<Record<string, number>>((acc, e) => {
-      acc[e.reimburse_to!] = (acc[e.reimburse_to!] ?? 0) + e.amount_cents;
-      return acc;
-    }, {});
-
-  const byCategory = expenses.reduce<Record<string, number>>((acc, e) => {
-    acc[e.category] = (acc[e.category] ?? 0) + e.amount_cents;
-    return acc;
-  }, {});
-
-  const pending = expenses.filter((e) => e.status === "pending_review").length;
-
-  const periodLabel = isTudo
-    ? "Todo o período"
-    : (() => {
-        const [y, m] = currentPeriod.split("-").map(Number);
-        return new Date(y, m - 1, 1).toLocaleDateString("pt-BR", {
-          month: "long",
-          year: "numeric",
-        });
-      })();
-
+export default function LandingPage() {
   return (
-    <main className="mx-auto max-w-lg p-4 pb-28">
-      <header className="flex items-baseline justify-between py-2">
-        <h1 className="text-2xl font-extrabold tracking-tight">Notinha</h1>
-        <nav className="flex items-center gap-3 text-sm font-bold">
-          {spaces.length > 0 && (
-            <Link href="/espacos" className="underline underline-offset-4">
-              Espaços
+    <div className="min-h-screen">
+      {/* Nav */}
+      <nav className="fixed top-0 z-50 w-full border-b border-paper/10 bg-print/90 backdrop-blur">
+        <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-3">
+          <span className="font-extrabold tracking-tight text-stamp text-lg">
+            notinha
+          </span>
+          <div className="flex items-center gap-4">
+            <Link
+              href="#planos"
+              className="hidden text-sm text-paper/60 hover:text-paper sm:block"
+            >
+              Planos
             </Link>
-          )}
-          <Link href="/importar" className="underline underline-offset-4">
-            Importar
-          </Link>
-          <Link href="/mapa" className="underline underline-offset-4">
-            Mapa
-          </Link>
-          <Link href="/configuracoes" className="underline underline-offset-4">
-            Config
-          </Link>
-          <Link href="/lista" className="underline underline-offset-4">
-            Lista →
-          </Link>
-        </nav>
-      </header>
+            <Link
+              href="/login"
+              className="rounded-md bg-stamp px-4 py-1.5 text-sm font-bold text-paper"
+            >
+              Entrar
+            </Link>
+          </div>
+        </div>
+      </nav>
 
-      {/* Seletor de período */}
-      <Suspense fallback={null}>
-        <PeriodSelector current={currentPeriod} />
-      </Suspense>
+      {/* Hero */}
+      <section className="relative flex min-h-screen items-center overflow-hidden pt-16">
+        {/* 3D canvas background */}
+        <div className="absolute inset-0 opacity-60">
+          <ReceiptCanvas />
+        </div>
 
-      {/* Cupom-resumo */}
-      <section className="receipt-edge mt-3 px-5 py-8">
-        <p className="text-center text-[11px] tracking-[0.3em] uppercase text-print-faint capitalize">
-          Resumo · {periodLabel}
-        </p>
-        <p className="money mt-3 text-center text-4xl font-bold">
-          {formatBRL(total)}
-        </p>
+        {/* Gradient overlay */}
+        <div className="absolute inset-0 bg-gradient-to-r from-print via-print/80 to-transparent" />
 
-        <div className="dashed-rule my-5" />
-
-        <ul className="space-y-1 text-sm">
-          {Object.entries(byCategory)
-            .sort((a, b) => b[1] - a[1])
-            .map(([cat, cents]) => (
-              <li key={cat} className="flex justify-between gap-2">
-                <span className="truncate">
-                  {categoryLabel(cat, userCategories)}
-                </span>
-                <span className="money shrink-0">{formatBRL(cents)}</span>
-              </li>
-            ))}
-          {expenses.length === 0 && (
-            <li className="text-center text-print-faint">
-              {isTudo
-                ? "Nenhum gasto registrado ainda."
-                : "Nenhum gasto neste período."}
-            </li>
-          )}
-        </ul>
-
-        {Object.entries(toReimburse).length > 0 && (
-          <>
-            <div className="dashed-rule my-5" />
-            {Object.entries(toReimburse).map(([who, cents]) => (
-              <p
-                key={who}
-                className="flex justify-between text-sm font-bold text-stamp"
+        <div className="relative mx-auto max-w-5xl px-6 py-24">
+          <div className="max-w-lg">
+            <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.35em] text-stamp/80">
+              Controle financeiro pessoal
+            </p>
+            <h1 className="text-4xl font-extrabold leading-tight tracking-tight sm:text-5xl">
+              Suas notas fiscais
+              <br />
+              <span className="text-stamp">num segundo.</span>
+            </h1>
+            <p className="mt-5 text-lg text-paper/60 leading-relaxed">
+              Fotografe o cupom, a IA lê tudo. Acompanhe seus gastos com
+              visualizações detalhadas, mapa e espaços compartilhados.
+            </p>
+            <div className="mt-8 flex flex-wrap gap-3">
+              <Link
+                href="/login"
+                className="rounded-lg bg-stamp px-7 py-3 font-extrabold text-paper shadow-lg"
               >
-                <span>A pagar pra {who}</span>
-                <span className="money">{formatBRL(cents)}</span>
-              </p>
-            ))}
-          </>
-        )}
+                Começar grátis
+              </Link>
+              <a
+                href="#funcionalidades"
+                className="rounded-lg border border-paper/20 px-7 py-3 font-bold text-paper/70 hover:border-paper/40"
+              >
+                Ver funcionalidades
+              </a>
+            </div>
+            <p className="mt-4 text-xs text-paper/30">
+              Sem cartão de crédito. Plano grátis permanente.
+            </p>
+          </div>
+        </div>
       </section>
 
-      {pending > 0 && (
-        <p className="mt-4 rounded-md bg-stamp/15 px-4 py-3 text-sm font-semibold text-stamp">
-          {pending} {pending === 1 ? "gasto aguarda" : "gastos aguardam"}{" "}
-          resposta — toca neles pra resolver.
-        </p>
-      )}
+      {/* Features */}
+      <section id="funcionalidades" className="bg-ink-soft py-24">
+        <div className="mx-auto max-w-5xl px-6">
+          <h2 className="text-center text-3xl font-extrabold">
+            Tudo que você precisa
+          </h2>
+          <p className="mx-auto mt-3 max-w-xl text-center text-paper/50">
+            Desenvolvido para quem quer gastar menos tempo catalogando e mais
+            tempo entendendo seus gastos.
+          </p>
 
-      <ExpenseList
-        expenses={expenses}
-        userCategories={userCategories}
-        spaces={spaces}
-        currentUserId={user?.id}
-      />
+          <div className="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {FEATURES.map((f) => (
+              <div
+                key={f.title}
+                className="receipt-edge px-6 py-5 hover:shadow-md transition-shadow"
+              >
+                <div className="mb-3 text-3xl">{f.icon}</div>
+                <h3 className="font-extrabold">{f.title}</h3>
+                <p className="mt-2 text-sm text-paper/55 leading-relaxed">
+                  {f.desc}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
 
-      <ReceiptCapture />
-    </main>
+      {/* Social proof / demo strip */}
+      <section className="py-16 bg-print border-y border-paper/10">
+        <div className="mx-auto max-w-5xl px-6 text-center">
+          <p className="text-3xl font-extrabold">
+            <span className="text-stamp">R$ 0</span> para começar.
+          </p>
+          <p className="mt-3 text-paper/50">
+            Crie sua conta agora e registre seus primeiros gastos em menos de 1
+            minuto.
+          </p>
+          <Link
+            href="/login"
+            className="mt-6 inline-block rounded-lg bg-stamp px-8 py-3 font-extrabold text-paper"
+          >
+            Criar conta grátis →
+          </Link>
+        </div>
+      </section>
+
+      {/* Pricing */}
+      <section id="planos" className="py-24 bg-ink-soft">
+        <div className="mx-auto max-w-5xl px-6">
+          <h2 className="text-center text-3xl font-extrabold">Planos</h2>
+          <p className="mt-3 text-center text-paper/50">
+            Comece grátis. Faça upgrade quando precisar.
+          </p>
+
+          <div className="mt-12 grid gap-5 sm:grid-cols-3">
+            {PLANS.map((p) => (
+              <div
+                key={p.name}
+                className={`receipt-edge px-6 py-7 flex flex-col ${
+                  p.highlight ? "ring-2 ring-ok/40" : ""
+                }`}
+              >
+                {p.highlight && (
+                  <p className="mb-2 text-center text-[10px] font-bold uppercase tracking-widest text-ok">
+                    Mais popular
+                  </p>
+                )}
+                <p className="text-center text-xs uppercase tracking-[0.25em] text-paper/50">
+                  {p.name}
+                </p>
+                <p className="money mt-2 text-center text-2xl font-extrabold">
+                  {p.price}
+                </p>
+                <div className="dashed-rule my-4" />
+                <ul className="flex-1 space-y-2">
+                  {p.features.map((f) => (
+                    <li key={f} className="flex gap-2 text-sm">
+                      <span className="text-ok shrink-0">✓</span>
+                      {f}
+                    </li>
+                  ))}
+                </ul>
+                <Link
+                  href="/login"
+                  className={`mt-5 block rounded-md py-2 text-center text-sm font-bold ${
+                    p.highlight
+                      ? "bg-ok text-paper"
+                      : "bg-ink text-paper/70 hover:bg-ink-soft"
+                  }`}
+                >
+                  Começar
+                </Link>
+              </div>
+            ))}
+          </div>
+
+          <p className="mt-8 text-center text-xs text-paper/30">
+            Pagamento via Stripe. Cancele quando quiser. Sem fidelidade.
+          </p>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="border-t border-paper/10 py-8">
+        <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-4 px-6">
+          <span className="font-extrabold text-stamp">notinha</span>
+          <div className="flex gap-4 text-xs text-paper/40">
+            <Link href="/planos" className="hover:text-paper/70">
+              Planos
+            </Link>
+            <Link href="/login" className="hover:text-paper/70">
+              Entrar
+            </Link>
+          </div>
+          <p className="text-xs text-paper/30">
+            © {new Date().getFullYear()} notinha
+          </p>
+        </div>
+      </footer>
+    </div>
   );
 }

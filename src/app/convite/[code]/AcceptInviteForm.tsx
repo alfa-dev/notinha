@@ -55,7 +55,7 @@ export default function AcceptInviteForm({
       </button>
 
       <a
-        href="/"
+        href="/dashboard"
         className="block text-center text-sm text-paper/60 underline underline-offset-2"
       >
         Cancelar

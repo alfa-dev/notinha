@@ -16,7 +16,7 @@ export default async function ListaPage() {
     <main className="mx-auto max-w-lg p-4 pb-12">
       <header className="flex items-baseline justify-between py-2">
         <h1 className="text-2xl font-extrabold tracking-tight">Lista de compras</h1>
-        <Link href="/" className="text-sm font-bold underline underline-offset-4">
+        <Link href="/dashboard" className="text-sm font-bold underline underline-offset-4">
           ← Gastos
         </Link>
       </header>

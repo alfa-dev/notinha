@@ -9,7 +9,7 @@ export default function PeriodSelector({ current }: { current: string }) {
   function go(p: string) {
     const sp = new URLSearchParams(params.toString());
     sp.set("periodo", p);
-    router.push(`/?${sp.toString()}`);
+    router.push(`/dashboard?${sp.toString()}`);
   }
 
   const isTudo = current === "tudo";
