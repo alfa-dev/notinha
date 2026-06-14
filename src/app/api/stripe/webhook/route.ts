@@ -2,10 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { createServiceClient } from "@/lib/supabase/service";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2026-05-27.dahlia",
-});
-
 // Mapeia Stripe price ID → tier
 function tierFromPriceId(priceId: string): "plus" | "pro" | null {
   if (priceId === process.env.STRIPE_PRICE_PLUS_MONTHLY) return "plus";
@@ -14,6 +10,9 @@ function tierFromPriceId(priceId: string): "plus" | "pro" | null {
 }
 
 export async function POST(req: NextRequest) {
+  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+    apiVersion: "2026-05-27.dahlia",
+  });
   const body = await req.text();
   const sig = req.headers.get("stripe-signature");
 
