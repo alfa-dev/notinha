@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
 const C = {
@@ -373,9 +374,27 @@ function Hero() {
 // ─── How It Works ─────────────────────────────────────────────────────────────
 function HowItWorks() {
   const steps = [
-    { num: "01", icon: "📸", title: "Tire uma foto", desc: "Fotografe qualquer nota fiscal, cupom ou comprovante. Funciona com câmera ou galeria." },
-    { num: "02", icon: "🤖", title: "IA interpreta", desc: "Extraímos automaticamente valor, estabelecimento, categoria, data e localização." },
-    { num: "03", icon: "📊", title: "Entenda seus gastos", desc: "Visualize tudo em gráficos, mapas e relatórios organizados por categoria e período." },
+    {
+      num: "01",
+      img: "/images/step-foto.jpg",
+      alt: "Pessoa fotografando nota fiscal com celular",
+      title: "Tire uma foto",
+      desc: "Fotografe qualquer nota fiscal, cupom ou comprovante. Funciona com câmera ou galeria.",
+    },
+    {
+      num: "02",
+      img: "/images/step-ia.jpg",
+      alt: "IA extraindo dados de nota fiscal",
+      title: "IA interpreta",
+      desc: "Extraímos automaticamente valor, estabelecimento, categoria, data e localização.",
+    },
+    {
+      num: "03",
+      img: "/images/step-dashboard.jpg",
+      alt: "Dashboard de gastos no monitor",
+      title: "Entenda seus gastos",
+      desc: "Visualize tudo em gráficos, mapas e relatórios organizados por categoria e período.",
+    },
   ];
   return (
     <section id="como-funciona" style={{ padding: "96px 24px", position: "relative" }}>
@@ -391,18 +410,37 @@ function HowItWorks() {
             <Fade key={s.num} delay={i * 120}>
               <div className="nhover-card" style={{
                 backgroundColor: C.surface, border: `1px solid ${C.border}`,
-                borderRadius: 20, padding: 28,
+                borderRadius: 20, overflow: "hidden",
                 boxShadow: "0 4px 24px rgba(0,0,0,0.2)",
                 cursor: "default",
               }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20 }}>
-                  <span style={{ fontSize: 32 }}>{s.icon}</span>
-                  <span style={{ color: C.raised, fontSize: 13, fontWeight: 700, backgroundColor: C.raised, padding: "3px 9px", borderRadius: 8 }}>{s.num}</span>
+                {/* Imagem */}
+                <div style={{ position: "relative", width: "100%", aspectRatio: "16/9", overflow: "hidden" }}>
+                  <Image
+                    src={s.img}
+                    alt={s.alt}
+                    fill
+                    sizes="(max-width: 768px) 100vw, 33vw"
+                    style={{ objectFit: "cover" }}
+                    priority={i === 0}
+                  />
+                  {/* Step badge */}
+                  <div style={{
+                    position: "absolute", top: 12, right: 12,
+                    backgroundColor: "rgba(11,16,32,0.75)", backdropFilter: "blur(8px)",
+                    border: `1px solid ${C.border}`,
+                    color: C.primary, fontSize: 11, fontWeight: 800,
+                    padding: "3px 10px", borderRadius: 20,
+                    letterSpacing: "0.08em",
+                  }}>
+                    {s.num}
+                  </div>
                 </div>
-                <h3 style={{ color: C.text, fontSize: 18, fontWeight: 700, marginBottom: 10 }}>{s.title}</h3>
-                <p style={{ color: C.muted, fontSize: 14, lineHeight: 1.65 }}>{s.desc}</p>
-                <div style={{ marginTop: 20, height: 2, backgroundColor: C.raised, borderRadius: 2 }}>
-                  <div style={{ height: "100%", width: `${[60, 90, 75][i]}%`, backgroundColor: C.primary, borderRadius: 2 }} />
+
+                {/* Texto */}
+                <div style={{ padding: "20px 24px 24px" }}>
+                  <h3 style={{ color: C.text, fontSize: 17, fontWeight: 700, marginBottom: 8 }}>{s.title}</h3>
+                  <p style={{ color: C.muted, fontSize: 14, lineHeight: 1.65 }}>{s.desc}</p>
                 </div>
               </div>
             </Fade>
