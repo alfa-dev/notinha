@@ -1,12 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
-export default function LoginPage() {
+function LoginForm() {
+  const searchParams = useSearchParams();
+  const next = searchParams.get("next") ?? "/";
   const [email, setEmail] = useState("");
   const [sent, setSent] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const callbackUrl = `${typeof location !== "undefined" ? location.origin : ""}/auth/callback?next=${encodeURIComponent(next)}`;
 
   async function sendLink() {
     setError(null);
@@ -14,7 +19,7 @@ export default function LoginPage() {
       const supabase = createClient();
       const { error } = await supabase.auth.signInWithOtp({
         email,
-        options: { emailRedirectTo: `${location.origin}/auth/callback` },
+        options: { emailRedirectTo: callbackUrl },
       });
       if (error) setError(error.message);
       else setSent(true);
@@ -29,7 +34,7 @@ export default function LoginPage() {
       const supabase = createClient();
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
-        options: { redirectTo: `${location.origin}/auth/callback` },
+        options: { redirectTo: callbackUrl },
       });
       if (error) setError(error.message);
     } catch (e) {
@@ -86,5 +91,13 @@ export default function LoginPage() {
         )}
       </div>
     </main>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense>
+      <LoginForm />
+    </Suspense>
   );
 }

@@ -25,6 +25,10 @@ export type Expense = {
   status: ExpenseStatus;
   questions: PendingQuestion[];
   notes: string | null;
+  space_id: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  address: string | null;
   created_at: string;
   expense_items?: ExpenseItem[];
 };
@@ -40,6 +44,38 @@ export type ShoppingItem = {
   position: number;
 };
 
+export type UserCategory = {
+  id: string;
+  user_id: string;
+  label: string;
+  position: number;
+};
+
+export type Space = {
+  id: string;
+  name: string;
+  owner_id: string;
+  created_at: string;
+  space_members?: SpaceMember[];
+};
+
+export type SpaceMember = {
+  space_id: string;
+  user_id: string;
+  display_name: string | null;
+  joined_at: string;
+};
+
+export type SpaceInvite = {
+  id: string;
+  space_id: string;
+  code: string;
+  created_by: string;
+  used_by: string | null;
+  expires_at: string | null;
+  created_at: string;
+};
+
 /** Resposta estruturada da IA ao ler uma notinha / texto livre */
 export type ParsedReceipt = {
   merchant: string | null;
@@ -49,7 +85,18 @@ export type ParsedReceipt = {
   category: string;
   payment_method: string | null;
   items: { description: string; quantity: number; unit_cents: number | null; total_cents: number }[];
-  /** perguntas que a IA precisa fazer antes de classificar com confiança */
   questions: string[];
   confidence: "high" | "medium" | "low";
+};
+
+/** Job na fila de OCR */
+export type OCRJob = {
+  id: string;
+  file?: File;
+  text?: string;
+  status: "queued" | "processing" | "done" | "error";
+  result?: { parsed: ParsedReceipt; receiptPath: string | null };
+  error?: string;
+  location?: { latitude: number; longitude: number; address?: string };
+  spaceId?: string | null;
 };

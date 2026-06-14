@@ -1,3 +1,5 @@
+import type { UserCategory } from "./types";
+
 export const CATEGORIES = [
   { id: "alimentacao", label: "Alimentação" },
   { id: "bar_lazer", label: "Bar / Lazer" },
@@ -20,8 +22,11 @@ export const PAYMENT_METHODS = [
   { id: "outro", label: "Outro" },
 ] as const;
 
-export function categoryLabel(id: string) {
-  return CATEGORIES.find((c) => c.id === id)?.label ?? id;
+export function categoryLabel(id: string, userCategories: UserCategory[] = []) {
+  const builtin = CATEGORIES.find((c) => c.id === id);
+  if (builtin) return builtin.label;
+  const custom = userCategories.find((c) => c.id === id);
+  return custom?.label ?? id;
 }
 
 export function paymentLabel(id: string) {
@@ -33,4 +38,11 @@ export function formatBRL(cents: number) {
     style: "currency",
     currency: "BRL",
   });
+}
+
+export function allCategories(userCategories: UserCategory[] = []) {
+  return [
+    ...CATEGORIES,
+    ...userCategories.map((c) => ({ id: c.id, label: c.label })),
+  ];
 }
