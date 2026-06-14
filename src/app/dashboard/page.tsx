@@ -7,6 +7,7 @@ import ReceiptCapture from "@/components/ReceiptCapture";
 import ExpenseList from "@/components/ExpenseList";
 import PeriodSelector from "@/components/PeriodSelector";
 import { getCurrentProfile, TIER_LABELS } from "@/lib/admin";
+import UserMenu from "@/components/UserMenu";
 
 type Props = {
   searchParams: Promise<{ periodo?: string }>;
@@ -130,6 +131,7 @@ export default async function DashboardPage({ searchParams }: Props) {
             >
               Config
             </Link>
+            <UserMenu email={user?.email ?? ""} />
           </nav>
         </div>
       </header>

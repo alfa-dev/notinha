@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Inter, Spline_Sans_Mono } from "next/font/google";
 import "./globals.css";
 import { OCRQueueProvider } from "@/components/OCRQueue";
+import NavigationProgress from "@/components/NavigationProgress";
 import { createClient } from "@/lib/supabase/server";
 import type { UserCategory, Space } from "@/lib/types";
 
@@ -59,6 +60,7 @@ export default async function RootLayout({
   return (
     <html lang="pt-BR">
       <body className={`${inter.variable} ${mono.variable} antialiased`}>
+        <NavigationProgress />
         <OCRQueueProvider userCategories={userCategories} spaces={spaces}>
           {children}
         </OCRQueueProvider>

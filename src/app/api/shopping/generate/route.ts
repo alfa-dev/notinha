@@ -4,6 +4,12 @@ import { createClient } from "@/lib/supabase/server";
 
 const MODEL = "claude-sonnet-4-6";
 
+const SHOPPING_GEN_LIMITS: Record<string, number | null> = {
+  free: 3,
+  plus: 10,
+  pro: null,
+};
+
 const SYSTEM = `Você monta listas de compras a partir do histórico de gastos de um usuário brasileiro.
 
 Você recebe os gastos recentes (com itens quando disponíveis) e devolve APENAS um JSON válido:
@@ -30,6 +36,44 @@ export async function POST() {
 
   if (!user) {
     return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
+  }
+
+  // Rate limit: check user tier and apply daily limit
+  const { data: profile } = await supabase
+    .from("user_profiles")
+    .select("tier, suspended")
+    .eq("id", user.id)
+    .single();
+
+  if (profile?.suspended) {
+    return NextResponse.json(
+      { error: "Conta suspensa. Entre em contato com o suporte." },
+      { status: 403 }
+    );
+  }
+
+  const tier = profile?.tier ?? "free";
+  const limit = SHOPPING_GEN_LIMITS[tier] ?? SHOPPING_GEN_LIMITS.free;
+
+  const { data: allowed, error: rpcError } = await supabase.rpc("try_increment_ai_usage", {
+    p_user_id: user.id,
+    p_endpoint: "shopping-generate",
+    p_limit: limit,
+  });
+
+  if (rpcError) {
+    return NextResponse.json({ error: "Erro interno" }, { status: 500 });
+  }
+
+  if (!allowed) {
+    return NextResponse.json(
+      {
+        error: `Limite de ${limit} gerações de lista por dia atingido no plano ${(tier as string).charAt(0).toUpperCase() + (tier as string).slice(1)}.`,
+        limitReached: true,
+        upgradeUrl: "/planos",
+      },
+      { status: 429 }
+    );
   }
 
   const { data: expenses, error } = await supabase

@@ -49,6 +49,7 @@ export type UserCategory = {
   user_id: string;
   label: string;
   position: number;
+  default_category_id?: string | null;
 };
 
 export type Space = {

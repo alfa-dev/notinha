@@ -2,10 +2,9 @@ import type { UserCategory } from "./types";
 
 export const CATEGORIES = [
   { id: "alimentacao", label: "Alimentação" },
-  { id: "bar_lazer", label: "Bar / Lazer" },
+  { id: "lazer", label: "Lazer" },
   { id: "transporte", label: "Transporte" },
   { id: "carro_manutencao", label: "Carro / Manutenção" },
-  { id: "cigarro", label: "Cigarro" },
   { id: "saude_farmacia", label: "Saúde / Farmácia" },
   { id: "casa", label: "Casa" },
   { id: "filha", label: "Filha" },
@@ -23,9 +22,17 @@ export const PAYMENT_METHODS = [
 ] as const;
 
 export function categoryLabel(id: string, userCategories: UserCategory[] = []) {
+  // backward compat: expenses saved before the rename
+  if (id === "bar_lazer") id = "lazer";
+  if (id === "cigarro") id = "outros";
+
+  const override = userCategories.find((c) => c.default_category_id === id);
+  if (override) return override.label;
+
   const builtin = CATEGORIES.find((c) => c.id === id);
   if (builtin) return builtin.label;
-  const custom = userCategories.find((c) => c.id === id);
+
+  const custom = userCategories.find((c) => c.id === id && !c.default_category_id);
   return custom?.label ?? id;
 }
 
@@ -41,8 +48,16 @@ export function formatBRL(cents: number) {
 }
 
 export function allCategories(userCategories: UserCategory[] = []) {
+  const overrideMap = new Map(
+    userCategories
+      .filter((c) => c.default_category_id)
+      .map((c) => [c.default_category_id!, c.label])
+  );
+
   return [
-    ...CATEGORIES,
-    ...userCategories.map((c) => ({ id: c.id, label: c.label })),
+    ...CATEGORIES.map((c) => ({ id: c.id, label: overrideMap.get(c.id) ?? c.label })),
+    ...userCategories
+      .filter((c) => !c.default_category_id)
+      .map((c) => ({ id: c.id, label: c.label })),
   ];
 }

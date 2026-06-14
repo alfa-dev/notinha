@@ -49,7 +49,7 @@ export async function POST(req: NextRequest) {
       .upsert({ id: user.id, stripe_customer_id: customerId });
   }
 
-  const origin = req.headers.get("origin") ?? process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+  const origin = process.env.NEXT_PUBLIC_APP_URL ?? req.headers.get("origin") ?? "http://localhost:3000";
 
   const session = await stripe.checkout.sessions.create({
     customer: customerId,

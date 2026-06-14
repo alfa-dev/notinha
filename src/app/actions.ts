@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/service";
 import type { ExpenseItem, PendingQuestion } from "@/lib/types";
 
 type SaveExpenseInput = {
@@ -162,6 +163,49 @@ export async function deleteUserCategory(id: string) {
   revalidatePath("/configuracoes");
 }
 
+export async function setDefaultCategoryLabel(defaultId: string, label: string) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Não autenticado");
+
+  const trimmed = label.trim();
+
+  if (!trimmed) {
+    // Empty label = restore default
+    await supabase
+      .from("user_categories")
+      .delete()
+      .eq("user_id", user.id)
+      .eq("default_category_id", defaultId);
+  } else {
+    const { data: existing } = await supabase
+      .from("user_categories")
+      .select("id")
+      .eq("user_id", user.id)
+      .eq("default_category_id", defaultId)
+      .maybeSingle();
+
+    if (existing) {
+      await supabase
+        .from("user_categories")
+        .update({ label: trimmed })
+        .eq("id", existing.id);
+    } else {
+      await supabase.from("user_categories").insert({
+        user_id: user.id,
+        label: trimmed,
+        default_category_id: defaultId,
+        position: 0,
+      });
+    }
+  }
+
+  revalidatePath("/configuracoes");
+  revalidatePath("/dashboard");
+}
+
 // ============ Espaços compartilhados ============
 
 export async function createSpace(name: string) {
@@ -260,7 +304,10 @@ export async function acceptInvite(code: string, displayName: string) {
   } = await supabase.auth.getUser();
   if (!user) throw new Error("Não autenticado");
 
-  const { data: invite, error: inviteErr } = await supabase
+  // Use service client for invite lookup: code is the bearer secret, RLS restricts
+  // regular clients to owner/creator only
+  const service = createServiceClient();
+  const { data: invite, error: inviteErr } = await service
     .from("space_invites")
     .select("id, space_id, used_by, expires_at")
     .eq("code", code.toUpperCase())

@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/service";
 import { redirect } from "next/navigation";
 import AcceptInviteForm from "./AcceptInviteForm";
 
@@ -16,7 +17,9 @@ export default async function ConvitePage({ params }: Props) {
     redirect(`/login?next=/convite/${code}`);
   }
 
-  const { data: invite } = await supabase
+  // Service client bypasses RLS for invite lookup; the code itself is the bearer secret
+  const service = createServiceClient();
+  const { data: invite } = await service
     .from("space_invites")
     .select("*, spaces(name)")
     .eq("code", code.toUpperCase())

@@ -198,7 +198,7 @@ export default function ReceiptCapture() {
                   value={text}
                   onChange={(e) => setText(e.target.value)}
                   rows={2}
-                  placeholder="ex: 2 maços de cigarro no pix, 23 reais"
+                  placeholder="ex: almoço no Kilograma, pix, 38 reais"
                   className="w-full rounded-md bg-ink px-3 py-3 text-paper outline-none placeholder:text-paper/30"
                 />
                 <button
