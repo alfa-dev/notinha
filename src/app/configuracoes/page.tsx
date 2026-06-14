@@ -1,7 +1,7 @@
-import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import type { UserCategory } from "@/lib/types";
 import CategoriesManager from "./CategoriesManager";
+import AppHeader from "@/components/AppHeader";
 import { CATEGORIES } from "@/lib/categories";
 
 export default async function ConfiguracoesPage() {
@@ -14,20 +14,10 @@ export default async function ConfiguracoesPage() {
   const userCategories = (data ?? []) as UserCategory[];
 
   return (
-    <main className="mx-auto max-w-lg p-4 pb-12">
-      <header className="flex items-baseline justify-between py-2">
-        <h1 className="text-2xl font-extrabold tracking-tight">
-          Configurações
-        </h1>
-        <Link
-          href="/dashboard"
-          className="text-sm font-bold underline underline-offset-4"
-        >
-          ← Gastos
-        </Link>
-      </header>
-
-      <section className="receipt-edge mt-4 px-5 py-8">
+    <>
+      <AppHeader title="Configurações" />
+      <main className="mx-auto max-w-lg p-4 pb-12">
+      <section className="rounded-2xl border border-[rgba(255,255,255,0.08)] bg-ink-soft mt-4 px-5 py-6">
         <p className="text-center text-[11px] tracking-[0.3em] uppercase text-print-faint mb-4">
           Categorias padrão
         </p>
@@ -48,5 +38,6 @@ export default async function ConfiguracoesPage() {
         <CategoriesManager initialCategories={userCategories} />
       </section>
     </main>
+    </>
   );
 }

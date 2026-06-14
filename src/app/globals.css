@@ -1,17 +1,20 @@
 @import "tailwindcss";
 
 @theme {
-  /* Paleta "notinha": tinta de cupom sobre balcão escuro */
-  --color-ink: #191c24;        /* fundo app */
-  --color-ink-soft: #232733;   /* cartões secundários */
-  --color-paper: #faf7ef;      /* papel térmico */
-  --color-paper-dim: #efe9da;
-  --color-print: #2b2620;      /* "tinta" impressa no papel */
-  --color-print-faint: #8a8273;
-  --color-stamp: #c8442c;      /* carimbo fiscal */
-  --color-ok: #2e7d4f;
+  /* ── Paleta nova: dark SaaS ──────────────────────────────── */
+  --color-ink:        #0B1020;   /* fundo principal */
+  --color-ink-soft:   #111827;   /* cards / surfaces */
+  --color-ink-raise:  #1A2238;   /* elevated (inputs, badges) */
+  --color-paper:      #FFFFFF;   /* texto principal */
+  --color-paper-dim:  #CBD5E1;   /* texto secundário claro */
+  --color-print:      #0B1020;   /* texto escuro (em fundos claros) */
+  --color-print-faint:#94A3B8;   /* texto muted */
+  --color-stamp:      #FF6433;   /* accent / primary */
+  --color-stamp-hover:#FF7B52;   /* accent hover */
+  --color-ok:         #10B981;   /* sucesso */
+  --color-border:     rgba(255,255,255,0.08); /* borda padrão */
 
-  --font-display: var(--font-archivo), system-ui, sans-serif;
+  --font-display: 'Inter', var(--font-archivo), system-ui, sans-serif;
   --font-money: var(--font-mono), ui-monospace, monospace;
 }
 
@@ -21,43 +24,29 @@ body {
   font-family: var(--font-display);
 }
 
-/* Assinatura visual: borda serrilhada de cupom fiscal */
+/* ── Cards modernos (substitui receipt-edge serrilhado) ─────── */
 .receipt-edge {
-  --notch: 10px;
-  background: var(--color-paper);
-  color: var(--color-print);
-  clip-path: polygon(
-    0% var(--notch),
-    2.5% 0%, 5% var(--notch), 7.5% 0%, 10% var(--notch), 12.5% 0%,
-    15% var(--notch), 17.5% 0%, 20% var(--notch), 22.5% 0%, 25% var(--notch),
-    27.5% 0%, 30% var(--notch), 32.5% 0%, 35% var(--notch), 37.5% 0%,
-    40% var(--notch), 42.5% 0%, 45% var(--notch), 47.5% 0%, 50% var(--notch),
-    52.5% 0%, 55% var(--notch), 57.5% 0%, 60% var(--notch), 62.5% 0%,
-    65% var(--notch), 67.5% 0%, 70% var(--notch), 72.5% 0%, 75% var(--notch),
-    77.5% 0%, 80% var(--notch), 82.5% 0%, 85% var(--notch), 87.5% 0%,
-    90% var(--notch), 92.5% 0%, 95% var(--notch), 97.5% 0%, 100% var(--notch),
-    100% calc(100% - var(--notch)),
-    97.5% 100%, 95% calc(100% - var(--notch)), 92.5% 100%, 90% calc(100% - var(--notch)),
-    87.5% 100%, 85% calc(100% - var(--notch)), 82.5% 100%, 80% calc(100% - var(--notch)),
-    77.5% 100%, 75% calc(100% - var(--notch)), 72.5% 100%, 70% calc(100% - var(--notch)),
-    67.5% 100%, 65% calc(100% - var(--notch)), 62.5% 100%, 60% calc(100% - var(--notch)),
-    57.5% 100%, 55% calc(100% - var(--notch)), 52.5% 100%, 50% calc(100% - var(--notch)),
-    47.5% 100%, 45% calc(100% - var(--notch)), 42.5% 100%, 40% calc(100% - var(--notch)),
-    37.5% 100%, 35% calc(100% - var(--notch)), 32.5% 100%, 30% calc(100% - var(--notch)),
-    27.5% 100%, 25% calc(100% - var(--notch)), 22.5% 100%, 20% calc(100% - var(--notch)),
-    17.5% 100%, 15% calc(100% - var(--notch)), 12.5% 100%, 10% calc(100% - var(--notch)),
-    7.5% 100%, 5% calc(100% - var(--notch)), 2.5% 100%, 0% calc(100% - var(--notch))
-  );
+  background: var(--color-ink-soft);
+  color: var(--color-paper);
+  border: 1px solid var(--color-border);
+  border-radius: 16px;
 }
 
+/* ── Valores monetários em mono ─────────────────────────────── */
 .money {
   font-family: var(--font-money);
   font-variant-numeric: tabular-nums;
 }
 
+/* ── Divisor sutil ───────────────────────────────────────────── */
 .dashed-rule {
-  border-top: 2px dashed color-mix(in srgb, var(--color-print) 25%, transparent);
+  border-top: 1px solid var(--color-border);
 }
+
+/* ── Scrollbar discreta ─────────────────────────────────────── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--color-ink-raise); border-radius: 3px; }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {

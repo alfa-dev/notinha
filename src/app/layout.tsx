@@ -1,13 +1,13 @@
 import type { Metadata, Viewport } from "next";
-import { Archivo, Spline_Sans_Mono } from "next/font/google";
+import { Inter, Spline_Sans_Mono } from "next/font/google";
 import "./globals.css";
 import { OCRQueueProvider } from "@/components/OCRQueue";
 import { createClient } from "@/lib/supabase/server";
 import type { UserCategory, Space } from "@/lib/types";
 
-const archivo = Archivo({
+const inter = Inter({
   subsets: ["latin"],
-  variable: "--font-archivo",
+  variable: "--font-archivo", // mantém variável para compat com classes existentes
 });
 
 const mono = Spline_Sans_Mono({
@@ -16,12 +16,12 @@ const mono = Spline_Sans_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Notinha",
-  description: "Manda a foto da notinha que eu anoto.",
+  title: "Notinha — Controle financeiro com IA",
+  description: "Fotografe notas fiscais e comprovantes. A IA organiza tudo automaticamente.",
 };
 
 export const viewport: Viewport = {
-  themeColor: "#191c24",
+  themeColor: "#0B1020",
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
@@ -58,7 +58,7 @@ export default async function RootLayout({
 
   return (
     <html lang="pt-BR">
-      <body className={`${archivo.variable} ${mono.variable} antialiased`}>
+      <body className={`${inter.variable} ${mono.variable} antialiased`}>
         <OCRQueueProvider userCategories={userCategories} spaces={spaces}>
           {children}
         </OCRQueueProvider>

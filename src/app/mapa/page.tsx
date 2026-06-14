@@ -1,8 +1,8 @@
-import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import type { Expense } from "@/lib/types";
 import { formatBRL } from "@/lib/categories";
 import MapClient from "./MapClient";
+import AppHeader from "@/components/AppHeader";
 
 export default async function MapaPage() {
   const supabase = await createClient();
@@ -17,17 +17,9 @@ export default async function MapaPage() {
   const expenses = (data ?? []) as Expense[];
 
   return (
-    <main className="mx-auto max-w-lg p-4 pb-12">
-      <header className="flex items-baseline justify-between py-2">
-        <h1 className="text-2xl font-extrabold tracking-tight">Mapa de gastos</h1>
-        <Link
-          href="/dashboard"
-          className="text-sm font-bold underline underline-offset-4"
-        >
-          ← Gastos
-        </Link>
-      </header>
-
+    <>
+      <AppHeader title="Mapa de gastos" />
+      <main className="mx-auto max-w-lg p-4 pb-12">
       <MapClient expenses={expenses} />
 
       {expenses.length > 0 && (
@@ -55,5 +47,6 @@ export default async function MapaPage() {
         </section>
       )}
     </main>
+    </>
   );
 }
