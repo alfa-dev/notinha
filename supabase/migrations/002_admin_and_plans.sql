@@ -1,6 +1,16 @@
 -- Migration 002: user_profiles (role, tier, subscription, OCR limits)
 -- Rodar no SQL Editor do Supabase
 
+-- ============ HELPER: updated_at trigger function ============
+-- (idempotente: já existe no schema inicial, mas incluída aqui por segurança)
+create or replace function public.set_updated_at()
+returns trigger language plpgsql as $$
+begin
+  new.updated_at = now();
+  return new;
+end;
+$$;
+
 -- ============ USER PROFILES ============
 
 create table if not exists public.user_profiles (

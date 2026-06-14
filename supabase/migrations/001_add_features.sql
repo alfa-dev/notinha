@@ -24,13 +24,49 @@ create table if not exists public.spaces (
   created_at timestamptz not null default now()
 );
 alter table public.spaces enable row level security;
+
+-- ============ SPACE MEMBERS ============
+-- Criada ANTES das policies de spaces que a referenciam
+create table if not exists public.space_members (
+  space_id uuid not null references public.spaces (id) on delete cascade,
+  user_id uuid not null references auth.users (id) on delete cascade,
+  display_name text,
+  joined_at timestamptz not null default now(),
+  primary key (space_id, user_id)
+);
+alter table public.space_members enable row level security;
+
+-- ============ SPACE INVITES ============
+create table if not exists public.space_invites (
+  id uuid primary key default gen_random_uuid(),
+  space_id uuid not null references public.spaces (id) on delete cascade,
+  code text not null unique default upper(substring(replace(gen_random_uuid()::text, '-', ''), 1, 8)),
+  created_by uuid not null references auth.users (id),
+  used_by uuid references auth.users (id),
+  expires_at timestamptz,
+  created_at timestamptz not null default now()
+);
+alter table public.space_invites enable row level security;
+
+-- ============ ALTER EXPENSES: location + space ============
+alter table public.expenses
+  add column if not exists space_id uuid references public.spaces (id) on delete set null,
+  add column if not exists latitude numeric,
+  add column if not exists longitude numeric,
+  add column if not exists address text;
+
+create index if not exists expenses_space_idx on public.expenses (space_id) where space_id is not null;
+
+-- ============ POLICIES (após todas as tabelas existirem) ============
+
+-- spaces
 create policy "spaces: members can select"
   on public.spaces for select
   using (
     auth.uid() = owner_id
     or exists (
       select 1 from public.space_members sm
-      where sm.space_id = id and sm.user_id = auth.uid()
+      where sm.space_id = spaces.id and sm.user_id = auth.uid()
     )
   );
 create policy "spaces: owner can insert"
@@ -44,15 +80,7 @@ create policy "spaces: owner can delete"
   on public.spaces for delete
   using (auth.uid() = owner_id);
 
--- ============ SPACE MEMBERS ============
-create table if not exists public.space_members (
-  space_id uuid not null references public.spaces (id) on delete cascade,
-  user_id uuid not null references auth.users (id) on delete cascade,
-  display_name text,
-  joined_at timestamptz not null default now(),
-  primary key (space_id, user_id)
-);
-alter table public.space_members enable row level security;
+-- space_members
 create policy "space_members: members can select"
   on public.space_members for select
   using (
@@ -71,17 +99,7 @@ create policy "space_members: self can delete"
   on public.space_members for delete
   using (auth.uid() = user_id);
 
--- ============ SPACE INVITES ============
-create table if not exists public.space_invites (
-  id uuid primary key default gen_random_uuid(),
-  space_id uuid not null references public.spaces (id) on delete cascade,
-  code text not null unique default upper(substring(replace(gen_random_uuid()::text, '-', ''), 1, 8)),
-  created_by uuid not null references auth.users (id),
-  used_by uuid references auth.users (id),
-  expires_at timestamptz,
-  created_at timestamptz not null default now()
-);
-alter table public.space_invites enable row level security;
+-- space_invites
 create policy "space_invites: anyone can select"
   on public.space_invites for select using (true);
 create policy "space_invites: owner can insert"
@@ -98,17 +116,7 @@ create policy "space_invites: owner can delete"
   on public.space_invites for delete
   using (exists (select 1 from public.spaces s where s.id = space_id and s.owner_id = auth.uid()));
 
--- ============ ALTER EXPENSES: location + space ============
-alter table public.expenses
-  add column if not exists space_id uuid references public.spaces (id) on delete set null,
-  add column if not exists latitude numeric,
-  add column if not exists longitude numeric,
-  add column if not exists address text;
-
-create index if not exists expenses_space_idx on public.expenses (space_id) where space_id is not null;
-
--- Update expenses RLS: split the single "for all" into separate policies
--- so space members can READ shared expenses without being able to modify them
+-- expenses: split "for all" into separate policies for shared-space reads
 drop policy if exists "expenses: own rows" on public.expenses;
 
 create policy "expenses: own or shared select"
@@ -137,7 +145,7 @@ create policy "expenses: own delete"
   on public.expenses for delete
   using (auth.uid() = user_id);
 
--- Update expense_items RLS similarly
+-- expense_items
 drop policy if exists "expense_items: via parent" on public.expense_items;
 
 create policy "expense_items: select via parent"
