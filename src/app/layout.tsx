@@ -65,7 +65,7 @@ export default async function RootLayout({
         <NavigationProgress />
         <OCRQueueProvider userCategories={userCategories} spaces={spaces}>
           {children}
-          {isLoggedIn && <ReceiptCapture />}
+          {isLoggedIn && <ReceiptCapture userCategories={userCategories} spaces={spaces} />}
         </OCRQueueProvider>
         <BottomNav />
       </body>

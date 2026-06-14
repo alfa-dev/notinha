@@ -69,11 +69,32 @@ export default async function DashboardPage({ searchParams }: Props) {
     getCurrentProfile(),
   ]);
 
+  // Fallback: se a query com expense_items(*) falhar, tenta sem o embed
+  let expensesFinalResult = expensesResult;
   if (expensesResult.error) {
-    console.error("[dashboard] expenses query error:", expensesResult.error);
+    console.error("[dashboard] expenses+items query error:", expensesResult.error.message);
+    const fallback = supabase
+      .from("expenses")
+      .select("*")
+      .order("date", { ascending: false })
+      .order("created_at", { ascending: false });
+
+    if (!isTudo) {
+      const [y, m] = currentPeriod.split("-").map(Number);
+      const start = `${y}-${String(m).padStart(2, "0")}-01`;
+      const daysInMonth = new Date(y, m, 0).getDate();
+      const endStr = `${y}-${String(m).padStart(2, "0")}-${String(daysInMonth).padStart(2, "0")}`;
+      expensesFinalResult = await fallback.gte("date", start).lte("date", endStr);
+    } else {
+      expensesFinalResult = await fallback.limit(500);
+    }
   }
 
-  const expenses = (expensesResult.data ?? []) as Expense[];
+  const queryError = expensesFinalResult.error
+    ? expensesResult.error?.message ?? expensesFinalResult.error.message
+    : null;
+
+  const expenses = (expensesFinalResult.data ?? []) as Expense[];
   const userCategories = (catRes.data ?? []) as UserCategory[];
   const spaces = (spaceRes.data ?? []) as Space[];
 
@@ -153,6 +174,13 @@ export default async function DashboardPage({ searchParams }: Props) {
         <Suspense fallback={null}>
           <PeriodSelector current={currentPeriod} />
         </Suspense>
+
+        {/* Query error visible to the user for debugging */}
+        {queryError && (
+          <div className="mt-3 rounded-xl border border-stamp/30 bg-stamp/10 px-4 py-3 text-xs text-stamp font-mono break-all">
+            Erro ao carregar gastos: {queryError}
+          </div>
+        )}
 
         {/* ── Stats cards ── */}
         <div className="mt-3 grid grid-cols-3 gap-2">

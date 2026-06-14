@@ -162,7 +162,7 @@ export function OCRQueueProvider({
 
       {/* Indicador flutuante */}
       {(processing.length > 0 || done.length > 0 || errors.length > 0) && (
-        <div className="fixed top-4 right-4 z-40 flex flex-col gap-2 max-w-[280px]">
+        <div className="fixed top-16 right-4 z-50 flex flex-col gap-2 max-w-[280px]">
           {processing.length > 0 && (
             <div className="rounded-lg bg-ink-soft px-4 py-2 text-sm font-semibold shadow-lg border border-paper/10">
               <span className="mr-2 inline-block h-2 w-2 animate-pulse rounded-full bg-ok" />
