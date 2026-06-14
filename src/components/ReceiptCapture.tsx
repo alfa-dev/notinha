@@ -191,7 +191,7 @@ export default function ReceiptCapture({ userCategories = [], spaces = [] }: Pro
 
       {/* ── Modal ── */}
       {open && (
-        <div className="fixed inset-0 z-30 flex items-end justify-center bg-black/60">
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60">
           <div className="w-full max-w-lg rounded-t-2xl bg-ink-soft">
             {/* Header fixo */}
             <div className="flex items-center justify-between px-5 pt-5 pb-3">
