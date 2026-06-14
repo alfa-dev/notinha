@@ -1,10 +1,5 @@
 import Link from "next/link";
-import dynamic from "next/dynamic";
-
-const ReceiptCanvas = dynamic(() => import("@/components/ReceiptCanvas"), {
-  ssr: false,
-  loading: () => <div className="h-full w-full" />,
-});
+import HeroCanvas from "./HeroCanvas";
 
 const FEATURES = [
   {
@@ -75,7 +70,7 @@ export default function LandingPage() {
       <section className="relative flex min-h-screen items-center overflow-hidden pt-16">
         {/* 3D canvas background */}
         <div className="absolute inset-0 opacity-60">
-          <ReceiptCanvas />
+          <HeroCanvas />
         </div>
 
         {/* Gradient overlay */}

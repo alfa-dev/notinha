@@ -1,10 +1,8 @@
 import Link from "next/link";
-import dynamic from "next/dynamic";
 import { createClient } from "@/lib/supabase/server";
 import type { Expense } from "@/lib/types";
 import { formatBRL } from "@/lib/categories";
-
-const MapView = dynamic(() => import("@/components/MapView"), { ssr: false });
+import MapClient from "./MapClient";
 
 export default async function MapaPage() {
   const supabase = await createClient();
@@ -30,7 +28,7 @@ export default async function MapaPage() {
         </Link>
       </header>
 
-      <MapView expenses={expenses} />
+      <MapClient expenses={expenses} />
 
       {expenses.length > 0 && (
         <section className="mt-6 space-y-2">
