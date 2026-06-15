@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { useOCRQueue } from "./OCRQueue";
 import { saveExpense } from "@/app/actions";
 import { allCategories, PAYMENT_METHODS } from "@/lib/categories";
@@ -15,6 +15,14 @@ type Props = {
 export default function ReceiptCapture({ userCategories = [], spaces = [] }: Props) {
   const { enqueue, jobs } = useOCRQueue();
   const router = useRouter();
+  const pathname = usePathname();
+
+  const isPublic =
+    pathname === "/" ||
+    pathname.startsWith("/login") ||
+    pathname.startsWith("/planos") ||
+    pathname.startsWith("/convite") ||
+    pathname.startsWith("/auth");
   const fileRef = useRef<HTMLInputElement>(null);
   const galleryRef = useRef<HTMLInputElement>(null);
 
@@ -164,6 +172,8 @@ export default function ReceiptCapture({ userCategories = [], spaces = [] }: Pro
   }
 
   const cats = allCategories(userCategories);
+
+  if (isPublic) return null;
 
   return (
     <>
