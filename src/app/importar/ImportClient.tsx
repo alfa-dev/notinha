@@ -25,6 +25,34 @@ export default function ImportClient() {
   const imageRef = useRef<HTMLInputElement>(null);
   const [isPending, startTransition] = useTransition();
 
+  // ─── Texto via IA ────────────────────────────────────────────────────────────
+
+  async function handleTextFile(file: File) {
+    setBusy(true);
+    setError(null);
+    try {
+      const form = new FormData();
+      form.append("file", file);
+
+      const res = await fetch("/api/parse-text", { method: "POST", body: form });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error ?? "Erro ao ler arquivo");
+
+      const parsed: ImportRow[] = (
+        json.transactions as { date: string; description: string; amount_cents: number }[]
+      ).map((t) => ({ ...t, selected: true }));
+
+      if (parsed.length === 0) throw new Error("Nenhuma transação encontrada no arquivo");
+
+      setRows(parsed);
+      setStep("preview");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Erro ao processar arquivo");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   // ─── CSV ────────────────────────────────────────────────────────────────────
 
   function parseCSV(text: string): ImportRow[] {
@@ -97,6 +125,9 @@ export default function ImportClient() {
   }
 
   async function handleCSVFile(file: File) {
+    if (file.name.endsWith(".txt") || file.type === "text/plain") {
+      return handleTextFile(file);
+    }
     setBusy(true);
     setError(null);
     try {
@@ -338,7 +369,7 @@ export default function ImportClient() {
               tab === t ? "bg-paper text-print" : "bg-ink-soft text-paper/60"
             }`}
           >
-            {t === "csv" ? "📊 CSV" : "📷 Foto da fatura"}
+            {t === "csv" ? "📄 Arquivo" : "📷 Foto da fatura"}
           </button>
         ))}
       </div>
@@ -350,12 +381,12 @@ export default function ImportClient() {
             disabled={busy}
             className="w-full rounded-xl border-2 border-dashed border-paper/30 py-12 text-center font-bold disabled:opacity-50"
           >
-            {busy ? "Lendo…" : "📂 Selecionar arquivo CSV"}
+            {busy ? "Lendo…" : "📂 Selecionar arquivo CSV ou TXT"}
           </button>
           <input
             ref={fileRef}
             type="file"
-            accept=".csv,text/csv"
+            accept=".csv,.txt,text/csv,text/plain"
             hidden
             onChange={(e) => {
               const f = e.target.files?.[0];
@@ -364,7 +395,8 @@ export default function ImportClient() {
             }}
           />
           <p className="mt-2 text-xs text-paper/50 text-center">
-            Colunas reconhecidas: data, descrição e valor. Separador ; ou ,
+            CSV: colunas de data, descrição e valor (separador ; ou ,)<br />
+            TXT: qualquer formato de extrato — interpretado por IA
           </p>
         </div>
       )}
